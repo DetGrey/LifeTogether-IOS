@@ -1,0 +1,21 @@
+# macOS
+.DS_Store
+
+# Xcode user-specific files
+*.xcuserstate
+xcuserdata/
+
+# Xcode build output
+DerivedData/
+build/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.swiftpm/
+.build/
+
+# Playgrounds
+timeline.xctimeline
+playground.xcworkspace
