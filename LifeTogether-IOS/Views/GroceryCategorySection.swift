@@ -16,7 +16,7 @@ struct GroceryCategorySection: View {
     let onToggleItem: (GroceryItem) -> Void
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: AppSpacing.small) {
             GrocerySectionHeader(
                 emoji: category.emoji,
                 title: category.name,
@@ -51,7 +51,7 @@ struct CompletedGrocerySection: View {
     let onToggleItem: (GroceryItem) -> Void
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: AppSpacing.small) {
             GrocerySectionHeader(
                 emoji: "✔️",
                 title: "Bought",
@@ -88,7 +88,7 @@ private struct GrocerySectionHeader: View {
 
     var body: some View {
         Button(action: onToggle) {
-            VStack(spacing: 8) {
+            VStack(spacing: AppSpacing.small) {
                 HStack(alignment: .bottom) {
                     Text(emoji)
                         .font(.appBodyLarge)
@@ -102,12 +102,14 @@ private struct GrocerySectionHeader: View {
                     if showsDelete, let onDelete {
                         Button(action: onDelete) {
                             Image(systemName: "trash")
+                                .font(.system(size: AppSizing.iconMedium))
                                 .foregroundStyle(.statusError)
                         }
-                        .buttonStyle(.plain) //todo explain plain
+                        .buttonStyle(.plain)
                     }
 
                     Image(systemName: isExpanded ? "chevron.right" : "chevron.down")
+                        .font(.system(size: AppSizing.iconMedium))
                         .foregroundStyle(.brandTertiary)
                 }
 

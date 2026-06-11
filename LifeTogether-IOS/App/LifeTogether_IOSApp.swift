@@ -12,6 +12,7 @@ struct LifeTogether_IOSApp: App {
     var body: some Scene {
         WindowGroup {
             GroceryListView()
+                .preferredColorScheme(.dark)
         }
     }
 }

@@ -11,7 +11,7 @@ struct ExampleView: View {
     var body: some View {
         VStack {
             Image(systemName: "globe")
-                .imageScale(.large)
+                .font(.system(size: AppSizing.iconLarge))
                 .foregroundStyle(.brandPrimary)
             Text("Hello, world!").foregroundStyle(.brandPrimary)
         }

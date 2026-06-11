@@ -15,9 +15,9 @@ struct GroceryListView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                LazyVStack(spacing: 20) { //todo spacing 20 is what? px? dp?
+                LazyVStack(spacing: AppSpacing.medium + AppSpacing.xSmall) {
                     if let expectedTotalPrice = viewModel.expectedTotalPrice {
-                        VStack(spacing: 4) {
+                        VStack(spacing: AppSpacing.xSmall) {
                             Text("Expected total price:")
                             Text(expectedTotalPrice.groceryPriceString(precise: true))
                         }
@@ -59,18 +59,18 @@ struct GroceryListView: View {
                         Text("No items on the list yet")
                             .font(.appBodyMedium)
                             .foregroundStyle(.textSecondary)
-                            .padding(.top, 40)
+                            .padding(.top, AppSpacing.xxLarge)
                     }
                 }
-                .padding(12)
-                .padding(.bottom, 12)
+                .padding(AppSpacing.medium - AppSpacing.xSmall)
+                .padding(.bottom, AppSpacing.medium - AppSpacing.xSmall)
             }
             .background(.appBackground)
             .navigationTitle("Grocery list")
             .navigationBarTitleDisplayMode(.inline)
             .safeAreaInset(edge: .bottom) {
                 AddGroceryItemBar(viewModel: viewModel)
-                    .padding(12)
+                    .padding(AppSpacing.medium - AppSpacing.xSmall)
                     .background(.appBackground)
             }
             .alert("Delete completed items", isPresented: $showingDeleteCompletedAlert) {

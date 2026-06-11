@@ -14,10 +14,10 @@ struct GroceryItemRow: View {
     let onToggleCompleted: () -> Void
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: AppSpacing.medium - AppSpacing.xSmall) {
             Button(action: onToggleCompleted) {
-                Image(systemName: item.completed ? "checkmark.square.fill" : "square")
-                    .font(.system(size: 24))
+                Image(systemName: item.completed ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: AppSizing.iconLarge))
                     .foregroundStyle(.brandPrimary)
             }
             .buttonStyle(.plain)
@@ -37,7 +37,7 @@ struct GroceryItemRow: View {
                     .strikethrough(item.completed)
             }
         }
-        .padding(.vertical, 10)
+        .padding(.vertical, AppSpacing.small + AppSpacing.xSmall / 2)
     }
 }
 

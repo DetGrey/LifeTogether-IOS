@@ -13,13 +13,18 @@ struct AddGroceryItemBar: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            TextField("Add item...", text: $viewModel.newItemName)
+            TextField(
+                "Add item...",
+                text: $viewModel.newItemName,
+                prompt: Text("Add item...")
+                    .foregroundStyle(.textSecondary)
+            )
                 .font(.appBodyMedium)
                 .foregroundStyle(.textPrimary)
                 .textInputAutocapitalization(.sentences)
-                .padding(16)
+                .padding(AppSpacing.medium)
 
-            HStack(spacing: 12) {
+            HStack(spacing: AppSpacing.medium - AppSpacing.xSmall) {
                 Menu {
                     ForEach(viewModel.groceryCategories) { category in
                         Button {
@@ -30,44 +35,56 @@ struct AddGroceryItemBar: View {
                     }
                 } label: {
                     Text(viewModel.selectedCategory.emoji)
-                        .frame(width: 44, height: 44)
+                        .frame(width: AppSizing.touchTargetMinimum, height: AppSizing.touchTargetMinimum)
                         .overlay(
                             Circle()
                                 .stroke(.textPrimary, lineWidth: 2)
                         )
                 }
 
-                TextField("Price", text: $viewModel.newItemPrice)
+                TextField(
+                    "Price",
+                    text: $viewModel.newItemPrice,
+                    prompt: Text("Price")
+                        .foregroundStyle(.textSecondary)
+                )
                     .font(.appBodySmall)
                     .foregroundStyle(.textPrimary)
                     .keyboardType(.decimalPad)
-                    .padding(.horizontal, 12)
-                    .frame(height: 44)
+                    .padding(.horizontal, AppSpacing.medium - AppSpacing.xSmall)
+                    .frame(height: AppSizing.touchTargetMinimum)
                     .background(.surfaceSecondary)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.small))
 
                 Button {
                     viewModel.addItem()
                 } label: {
-                    HStack(spacing: 4) {
+                    HStack(spacing: AppSpacing.small) {
                         Text("Add")
+                            .font(.appBodyMedium)
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(.system(size: AppSizing.iconSmall, weight: .semibold))
                     }
                     .font(.appBodyMedium)
                     .foregroundStyle(viewModel.canAddItem ? .brandSecondary : .textSecondary)
                 }
                 .disabled(!viewModel.canAddItem)
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, AppSpacing.medium)
             .padding(.bottom, 14)
         }
         .background(.appBackgroundSecondary)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.medium))
     }
 }
 
-#Preview {
+#Preview("Empty") {
+    AddGroceryItemBar(viewModel: GroceryListViewModel())
+        .padding()
+        .background(.appBackground)
+}
+
+#Preview("Filled") {
     AddGroceryItemBar(
         viewModel: {
             let viewModel = GroceryListViewModel()

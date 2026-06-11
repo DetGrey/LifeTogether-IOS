@@ -51,7 +51,7 @@ final class GroceryListViewModel {
         groceryCategories.compactMap { category in
             let categoryItems = items
                 .filter { !$0.completed && $0.category.name == category.name }
-                .sorted { $0.itemName.localizedCaseInsensitiveCompare($1.itemName) == .orderedAscending } //todo understand
+                .sorted { $0.itemName.localizedCaseInsensitiveCompare($1.itemName) == .orderedAscending }
 
             return categoryItems.isEmpty ? nil : (category, categoryItems)
         }
@@ -66,7 +66,7 @@ final class GroceryListViewModel {
     }
 
     func addItem() {
-        guard canAddItem else { return } //todo guard instead of if?
+        guard canAddItem else { return }
 
         let item = GroceryItem(
             itemName: newItemName.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -75,14 +75,14 @@ final class GroceryListViewModel {
         )
 
         items.append(item)
-        expandedCategories.insert(selectedCategory.name) //todo what if it already exists?
+        expandedCategories.insert(selectedCategory.name)
 
         newItemName = ""
         newItemPrice = ""
         selectedCategory = .uncategorized
     }
 
-    func toggleCompleted(_ item: GroceryItem) { //todo why the underscore?
+    func toggleCompleted(_ item: GroceryItem) {
         guard let index = items.firstIndex(where: { $0.id == item.id }) else { return }
 
         items[index].completed.toggle()
