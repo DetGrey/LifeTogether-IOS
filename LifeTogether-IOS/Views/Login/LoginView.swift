@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct LoginView: View {
-    @Environment(AuthSession.self) private var authSession
+    @Environment(SessionStore.self) private var sessionStore
     @Environment(\.dismiss) private var dismiss
 
     @State private var email = ""
@@ -78,7 +78,7 @@ struct LoginView: View {
 
         Task {
             do {
-                try await authSession.signIn(
+                try await sessionStore.signIn(
                     email: email.trimmingCharacters(in: .whitespacesAndNewlines),
                     password: password
                 )
@@ -116,7 +116,7 @@ private extension View {
 #Preview {
     NavigationStack {
         LoginView()
-            .environment(AuthSession())
+            .environment(SessionStore.previewUnauthenticated)
     }
     .preferredColorScheme(.dark)
 }

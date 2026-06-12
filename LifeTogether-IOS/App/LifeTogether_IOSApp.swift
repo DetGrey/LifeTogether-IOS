@@ -11,11 +11,11 @@ import UIKit
 
 @main
 struct LifeTogether_IOSApp: App {
-    @State private var authSession: AuthSession
+    @State private var sessionStore: SessionStore
 
     init() {
         FirebaseApp.configure()
-        _authSession = State(initialValue: AuthSession())
+        _sessionStore = State(initialValue: SessionStore())
 
         let backgroundColor = UIColor(named: "appBackground") ?? UIColor(red: 0.071, green: 0.055, blue: 0.082, alpha: 1)
 
@@ -45,7 +45,7 @@ struct LifeTogether_IOSApp: App {
                 HomeView()
             }
             .preferredColorScheme(.dark)
-            .environment(authSession)
+            .environment(sessionStore)
         }
     }
 }

@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct HomeView: View {
-    @Environment(AuthSession.self) private var authSession
+    @Environment(SessionStore.self) private var sessionStore
     @State private var navigationPath: [HomeDestination] = []
     
     let sectionRows: [HomeTileRow] = [
@@ -19,20 +19,30 @@ struct HomeView: View {
     ]
     
     var body: some View {
+        let user = sessionStore.currentUser
+        
         NavigationStack(path: $navigationPath) {
             ScrollView {
                 LazyVStack(spacing: AppSpacing.medium) {
                     Text("1477 days together")
                         .font(.appLabelMedium)
                     
-                    VStack {
-//                        Text("Family image")
-//                            .font(.appHeadlineSmall)
-//                            .foregroundStyle(.textPrimary)
+                    ZStack {
+                        // todo should be familyUrl
+                        if let urlString = user?.imageUrl, let validURL = URL(string: urlString) {
+                            AsyncImage(url: validURL) { image in
+                                image
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                            } placeholder: {
+                                Color.clear
+                            }
+                        }
                     }
                     .frame(maxWidth: .infinity)
                     .frame(height: 200)
                     .background(.surfaceSecondary, in: RoundedRectangle(cornerRadius: AppRadius.large))
+                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.large))
                     
                     HStack {
                         //todo status card
@@ -62,13 +72,13 @@ struct HomeView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
-                        navigationPath.append(authSession.isLoggedIn ? .profile : .login)
+                        navigationPath.append(sessionStore.isLoggedIn ? .profile : .login)
                     } label: {
                         Image(systemName: "person.crop.circle")
                             .font(.system(size: AppSizing.iconMedium))
-                            .foregroundStyle(.brandPrimary)
+                            .foregroundStyle(.textPrimary)
                     }
-                    .accessibilityLabel(authSession.isLoggedIn ? "Profile" : "Login")
+                    .accessibilityLabel(sessionStore.isLoggedIn ? "Profile" : "Login")
                 }
             }
             .navigationDestination(for: HomeDestination.self) { destination in
@@ -102,7 +112,7 @@ struct HomeView: View {
     }
 
     private func navigate(to tile: HomeTile) {
-        guard tile != .groceryList || authSession.isLoggedIn else { return }
+        guard tile != .groceryList || sessionStore.isLoggedIn else { return }
 
         navigationPath.append(.tile(tile))
     }
@@ -110,6 +120,6 @@ struct HomeView: View {
 
 #Preview {
     HomeView()
-        .environment(AuthSession())
+        .environment(SessionStore.previewAuthenticated)
         .preferredColorScheme(.dark)
 }
