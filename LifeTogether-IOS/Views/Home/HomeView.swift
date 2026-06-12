@@ -33,6 +33,11 @@ struct HomeView: View {
                     .frame(height: 200)
                     .background(.surfaceSecondary, in: RoundedRectangle(cornerRadius: AppRadius.large))
                     
+                    HStack {
+                        //todo status card
+                    }
+                    .frame(maxWidth: .infinity)
+                    
                     VStack(spacing: AppSpacing.small) {
                         ForEach(sectionRows) { row in
                             HStack(spacing: AppSpacing.small) {
@@ -49,14 +54,6 @@ struct HomeView: View {
                         }
                     }
                 }
-                
-                
-                // todo old way to show how to link
-//                NavigationLink {
-//                    GroceryListView()
-//                } label: {
-//                    Text("Grocery list")
-//                }
             }
             .padding(AppSpacing.medium)
             .background(.appBackground)

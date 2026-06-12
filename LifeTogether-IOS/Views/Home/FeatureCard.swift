@@ -23,7 +23,7 @@ struct FeatureCard: View {
                     .foregroundStyle(.brandTertiary)
                 
                 Text(title)
-                    .font(.appHeadlineSmall)
+                    .font(.appTitleMedium)
                     .foregroundStyle(.textPrimary)
                 Spacer()
             }
