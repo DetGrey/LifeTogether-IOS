@@ -103,6 +103,7 @@ private struct GrocerySectionHeader: View {
                         Button(action: onDelete) {
                             Image(systemName: "trash")
                                 .font(.system(size: AppSizing.iconMedium))
+                                .frame(width: AppSizing.iconMedium, height: AppSizing.iconMedium)
                                 .foregroundStyle(.statusError)
                         }
                         .buttonStyle(.plain)
@@ -110,6 +111,7 @@ private struct GrocerySectionHeader: View {
 
                     Image(systemName: isExpanded ? "chevron.right" : "chevron.down")
                         .font(.system(size: AppSizing.iconMedium))
+                        .frame(width: AppSizing.iconMedium, height: AppSizing.iconMedium)
                         .foregroundStyle(.brandTertiary)
                 }
 
