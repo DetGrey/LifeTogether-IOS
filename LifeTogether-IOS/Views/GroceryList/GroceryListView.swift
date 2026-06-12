@@ -64,6 +64,7 @@ struct GroceryListView: View {
             .padding(AppSpacing.medium)
             .padding(.bottom, AppSpacing.medium)
         }
+        .scrollIndicators(.hidden)
         .background(.appBackground)
         .appNavigationTitle("Grocery list")
         .safeAreaInset(edge: .bottom) {

@@ -66,6 +66,7 @@ struct LoginView: View {
             }
             .padding(AppSpacing.medium)
         }
+        .scrollIndicators(.hidden)
         .background(.appBackground)
         .appNavigationTitle("Login")
     }

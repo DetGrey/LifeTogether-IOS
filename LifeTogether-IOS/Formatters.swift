@@ -21,4 +21,11 @@ extension Date {
         formatter.dateFormat = "dd. MMM yyyy"
         return formatter.string(from: self)
     }
+
+    func fullMonthDateString() -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US")
+        formatter.dateFormat = "dd. MMMM yyyy"
+        return formatter.string(from: self)
+    }
 }

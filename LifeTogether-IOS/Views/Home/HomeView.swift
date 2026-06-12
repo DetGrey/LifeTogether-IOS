@@ -5,11 +5,16 @@
 //  Created by Ane Novrup Larsen on 11/06/2026.
 //
 
+import FirebaseFirestore
 import SwiftUI
 
 struct HomeView: View {
     @Environment(SessionStore.self) private var sessionStore
     @State private var navigationPath: [HomeDestination] = []
+    @State private var familyImageUrl: String?
+    @State private var familyListener: ListenerRegistration?
+
+    private let familyRepository = FirestoreFamilyRepository()
     
     let sectionRows: [HomeTileRow] = [
         HomeTileRow(tiles: [.groceryList, .recipes]),
@@ -19,8 +24,6 @@ struct HomeView: View {
     ]
     
     var body: some View {
-        let user = sessionStore.currentUser
-        
         NavigationStack(path: $navigationPath) {
             ScrollView {
                 LazyVStack(spacing: AppSpacing.medium) {
@@ -28,8 +31,7 @@ struct HomeView: View {
                         .font(.appLabelMedium)
                     
                     ZStack {
-                        // todo should be familyUrl
-                        if let urlString = user?.imageUrl, let validURL = URL(string: urlString) {
+                        if let urlString = familyImageUrl, let validURL = URL(string: urlString) {
                             AsyncImage(url: validURL) { image in
                                 image
                                     .resizable()
@@ -66,6 +68,7 @@ struct HomeView: View {
                     }
                 }
             }
+            .scrollIndicators(.hidden)
             .padding(AppSpacing.medium)
             .background(.appBackground)
             .appNavigationTitle("LifeTogether")
@@ -108,6 +111,18 @@ struct HomeView: View {
                     }
                 }
             }
+            .onChange(of: sessionStore.isLoggedIn) { _, isLoggedIn in
+                if !isLoggedIn {
+                    stopObservingFamily()
+                    navigationPath.removeAll()
+                }
+            }
+            .onAppear {
+                observeFamily(familyId: sessionStore.familyId)
+            }
+            .onChange(of: sessionStore.familyId) { _, familyId in
+                observeFamily(familyId: familyId)
+            }
         }
     }
 
@@ -115,6 +130,31 @@ struct HomeView: View {
         guard tile != .groceryList || sessionStore.isLoggedIn else { return }
 
         navigationPath.append(.tile(tile))
+    }
+
+    private func observeFamily(familyId: String?) {
+        familyListener?.remove()
+        familyListener = nil
+        familyImageUrl = nil
+
+        guard let familyId else { return }
+
+        familyListener = familyRepository.observeFamilyInformation(familyId: familyId) { result in
+            Task { @MainActor in
+                switch result {
+                case .success(let family):
+                    familyImageUrl = family.imageUrl
+                case .failure:
+                    familyImageUrl = nil
+                }
+            }
+        }
+    }
+
+    private func stopObservingFamily() {
+        familyListener?.remove()
+        familyListener = nil
+        familyImageUrl = nil
     }
 }
 

@@ -96,6 +96,14 @@ final class SessionStore {
         }
     }
 
+    func signOut() throws {
+        userListener?.remove()
+        userListener = nil
+        try Auth.auth().signOut()
+        state = .unauthenticated
+        lastErrorMessage = nil
+    }
+
     private func handleAuthUser(_ user: User?) {
         userListener?.remove()
         userListener = nil
@@ -178,7 +186,7 @@ extension SessionStore {
                     email: "ane@example.com",
                     name: "Ane",
                     lastUpdated: Date(),
-                    birthday: nil,
+                    birthday: Calendar.current.date(from: DateComponents(year: 1998, month: 4, day: 23)),
                     familyId: "preview-family",
                     imageUrl: nil
                 )
