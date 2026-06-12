@@ -8,7 +8,8 @@
 import SwiftUI
 
 struct HomeView: View {
-    @State private var navigationPath: [HomeTile] = []
+    @Environment(AuthSession.self) private var authSession
+    @State private var navigationPath: [HomeDestination] = []
     
     let sectionRows: [HomeTileRow] = [
         HomeTileRow(tiles: [.groceryList, .recipes]),
@@ -46,7 +47,7 @@ struct HomeView: View {
                                         title: tile.rawValue,
                                         icon: tile.iconName,
                                         onClick: {
-                                            navigationPath.append(tile)
+                                            navigate(to: tile)
                                         }
                                     )
                                 }
@@ -58,31 +59,57 @@ struct HomeView: View {
             .padding(AppSpacing.medium)
             .background(.appBackground)
             .appNavigationTitle("LifeTogether")
-            .navigationDestination(for: HomeTile.self) { tile in
-                switch tile {
-                case .groceryList:
-                    GroceryListView()
-                case .recipes:
-                    Text("Recipes Screen Placeholder")
-                case .guides:
-                    Text("Guides Screen Placeholder")
-                case .gallery:
-                    Text("Gallery Screen Placeholder")
-                case .tipTracker:
-                    Text("Tip Tracker Screen Placeholder")
-                case .lists:
-                    Text("Lists Screen Placeholder")
-                case .mealPlanner:
-                    Text("Meal Planner Screen Placeholder")
-                case .traveller:
-                    Text("Traveller Screen Placeholder")
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        navigationPath.append(authSession.isLoggedIn ? .profile : .login)
+                    } label: {
+                        Image(systemName: "person.crop.circle")
+                            .font(.system(size: AppSizing.iconMedium))
+                            .foregroundStyle(.brandPrimary)
+                    }
+                    .accessibilityLabel(authSession.isLoggedIn ? "Profile" : "Login")
+                }
+            }
+            .navigationDestination(for: HomeDestination.self) { destination in
+                switch destination {
+                case .login:
+                    LoginView()
+                case .profile:
+                    ProfileView()
+                case .tile(let tile):
+                    switch tile {
+                    case .groceryList:
+                        GroceryListView()
+                    case .recipes:
+                        Text("Recipes Screen Placeholder")
+                    case .guides:
+                        Text("Guides Screen Placeholder")
+                    case .gallery:
+                        Text("Gallery Screen Placeholder")
+                    case .tipTracker:
+                        Text("Tip Tracker Screen Placeholder")
+                    case .lists:
+                        Text("Lists Screen Placeholder")
+                    case .mealPlanner:
+                        Text("Meal Planner Screen Placeholder")
+                    case .traveller:
+                        Text("Traveller Screen Placeholder")
+                    }
                 }
             }
         }
+    }
+
+    private func navigate(to tile: HomeTile) {
+        guard tile != .groceryList || authSession.isLoggedIn else { return }
+
+        navigationPath.append(.tile(tile))
     }
 }
 
 #Preview {
     HomeView()
+        .environment(AuthSession())
         .preferredColorScheme(.dark)
 }

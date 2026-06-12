@@ -5,12 +5,18 @@
 //  Created by Ane Novrup Larsen on 11/06/2026.
 //
 
+import FirebaseCore
 import SwiftUI
 import UIKit
 
 @main
 struct LifeTogether_IOSApp: App {
+    @State private var authSession: AuthSession
+
     init() {
+        FirebaseApp.configure()
+        _authSession = State(initialValue: AuthSession())
+
         let backgroundColor = UIColor(named: "appBackground") ?? UIColor(red: 0.071, green: 0.055, blue: 0.082, alpha: 1)
 
         let appearance = UINavigationBarAppearance()
@@ -39,6 +45,7 @@ struct LifeTogether_IOSApp: App {
                 HomeView()
             }
             .preferredColorScheme(.dark)
+            .environment(authSession)
         }
     }
 }
