@@ -5,16 +5,12 @@
 //  Created by Ane Novrup Larsen on 11/06/2026.
 //
 
-import FirebaseFirestore
 import SwiftUI
 
 struct HomeView: View {
     @Environment(SessionStore.self) private var sessionStore
+    @State private var viewModel = HomeViewModel()
     @State private var navigationPath: [HomeDestination] = []
-    @State private var familyImageUrl: String?
-    @State private var familyListener: ListenerRegistration?
-
-    private let familyRepository = FirestoreFamilyRepository()
     
     let sectionRows: [HomeTileRow] = [
         HomeTileRow(tiles: [.groceryList, .recipes]),
@@ -31,7 +27,7 @@ struct HomeView: View {
                         .font(.appLabelMedium)
                     
                     ZStack {
-                        if let urlString = familyImageUrl, let validURL = URL(string: urlString) {
+                        if let urlString = viewModel.familyImageUrl, let validURL = URL(string: urlString) {
                             AsyncImage(url: validURL) { image in
                                 image
                                     .resizable()
@@ -46,10 +42,16 @@ struct HomeView: View {
                     .background(.surfaceSecondary, in: RoundedRectangle(cornerRadius: AppRadius.large))
                     .clipShape(RoundedRectangle(cornerRadius: AppRadius.large))
                     
-                    HStack {
-                        //todo status card
+                    if let statusMessage = viewModel.statusMessage {
+                        Text(statusMessage) //todo clickable
+                            .padding(.horizontal, AppSpacing.medium)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 75)
+                            .foregroundColor(.textOnBrandTertiary)
+                            .background(.brandTertiary)
+                            .clipShape(RoundedRectangle(cornerRadius: AppRadius.large))
+                
                     }
-                    .frame(maxWidth: .infinity)
                     
                     VStack(spacing: AppSpacing.small) {
                         ForEach(sectionRows) { row in
@@ -113,15 +115,14 @@ struct HomeView: View {
             }
             .onChange(of: sessionStore.isLoggedIn) { _, isLoggedIn in
                 if !isLoggedIn {
-                    stopObservingFamily()
                     navigationPath.removeAll()
                 }
             }
             .onAppear {
-                observeFamily(familyId: sessionStore.familyId)
+                viewModel.update(for: sessionStore.state)
             }
-            .onChange(of: sessionStore.familyId) { _, familyId in
-                observeFamily(familyId: familyId)
+            .onChange(of: sessionStore.state) { _, state in
+                viewModel.update(for: state)
             }
         }
     }
@@ -131,35 +132,15 @@ struct HomeView: View {
 
         navigationPath.append(.tile(tile))
     }
-
-    private func observeFamily(familyId: String?) {
-        familyListener?.remove()
-        familyListener = nil
-        familyImageUrl = nil
-
-        guard let familyId else { return }
-
-        familyListener = familyRepository.observeFamilyInformation(familyId: familyId) { result in
-            Task { @MainActor in
-                switch result {
-                case .success(let family):
-                    familyImageUrl = family.imageUrl
-                case .failure:
-                    familyImageUrl = nil
-                }
-            }
-        }
-    }
-
-    private func stopObservingFamily() {
-        familyListener?.remove()
-        familyListener = nil
-        familyImageUrl = nil
-    }
 }
 
-#Preview {
+#Preview("Authenticated") {
     HomeView()
         .environment(SessionStore.previewAuthenticated)
+        .preferredColorScheme(.dark)
+}
+#Preview("Unauthenticated") {
+    HomeView()
+        .environment(SessionStore.previewUnauthenticated)
         .preferredColorScheme(.dark)
 }
