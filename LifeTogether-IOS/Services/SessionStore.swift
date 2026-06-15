@@ -17,6 +17,9 @@ final class SessionStore {
     private let userRepository: UserRepository
     private var authListenerHandle: AuthStateDidChangeListenerHandle?
     private var userListener: ListenerRegistration?
+    private var adminUidsListener: ListenerRegistration?
+    private var currentSessionUser: UserInformation?
+    private var currentAdminUids: [String] = []
     private var pendingSignInContinuation: CheckedContinuation<Void, Error>?
 
     var state: SessionState = .loading
@@ -36,6 +39,10 @@ final class SessionStore {
 
     var familyId: String? {
         currentUser?.familyId
+    }
+
+    var isAdmin: Bool {
+        state.isAdmin
     }
 
     init(
@@ -97,16 +104,14 @@ final class SessionStore {
     }
 
     func signOut() throws {
-        userListener?.remove()
-        userListener = nil
+        stopObservingSession()
         try Auth.auth().signOut()
         state = .unauthenticated
         lastErrorMessage = nil
     }
 
     private func handleAuthUser(_ user: User?) {
-        userListener?.remove()
-        userListener = nil
+        stopObservingSession()
 
         guard let user else {
             state = .unauthenticated
@@ -119,7 +124,8 @@ final class SessionStore {
     }
 
     private func observeUser(uid: String) {
-        userListener?.remove()
+        stopObservingSession()
+        observeAdminUids()
 
         userListener = userRepository.observeUserInformation(uid: uid) { [weak self] result in
             Task { @MainActor in
@@ -127,16 +133,53 @@ final class SessionStore {
 
                 switch result {
                 case .success(let user):
+                    self.currentSessionUser = user
                     self.lastErrorMessage = nil
-                    self.state = .authenticated(user: user)
+                    self.publishAuthenticatedState()
                     self.finishPendingSignIn(with: .success(()))
                 case .failure(let error):
+                    self.stopObservingSession()
                     self.lastErrorMessage = error.localizedDescription
                     self.state = .unauthenticated
                     self.finishPendingSignIn(with: .failure(error))
                 }
             }
         }
+    }
+
+    private func observeAdminUids() {
+        adminUidsListener = userRepository.observeAdminUids { [weak self] result in
+            Task { @MainActor in
+                guard let self else { return }
+
+                switch result {
+                case .success(let adminUids):
+                    self.currentAdminUids = adminUids
+                case .failure:
+                    self.currentAdminUids = []
+                }
+
+                self.publishAuthenticatedState()
+            }
+        }
+    }
+
+    private func publishAuthenticatedState() {
+        guard let user = currentSessionUser else { return }
+
+        state = .authenticated(
+            user: user,
+            isAdmin: currentAdminUids.contains(user.uid)
+        )
+    }
+
+    private func stopObservingSession() {
+        userListener?.remove()
+        userListener = nil
+        adminUidsListener?.remove()
+        adminUidsListener = nil
+        currentSessionUser = nil
+        currentAdminUids = []
     }
 
     private func finishPendingSignIn(with result: Result<Void, Error>) {
@@ -189,7 +232,26 @@ extension SessionStore {
                     birthday: Calendar.current.date(from: DateComponents(year: 1998, month: 4, day: 23)),
                     familyId: "preview-family",
                     imageUrl: nil
-                )
+                ),
+                isAdmin: false
+            ),
+            observesFirebase: false
+        )
+    }
+
+    static var previewAdmin: SessionStore {
+        SessionStore(
+            initialState: .authenticated(
+                user: UserInformation(
+                    uid: "preview-admin-uid",
+                    email: "ane@example.com",
+                    name: "Ane",
+                    lastUpdated: Date(),
+                    birthday: Calendar.current.date(from: DateComponents(year: 1998, month: 4, day: 23)),
+                    familyId: "preview-family",
+                    imageUrl: nil
+                ),
+                isAdmin: true
             ),
             observesFirebase: false
         )

@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ProfileDetails: View {
-    let systemImage: String
+    let icon: String
     let title: String
     let value: String
     var enabled = true
@@ -76,14 +76,14 @@ struct ProfileDetails: View {
                         .resizable()
                         .aspectRatio(contentMode: .fill)
                 } placeholder: {
-                    Image(systemName: "person.crop.circle")
+                    Image("ic_profile")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .padding(AppSpacing.small)
                         .foregroundStyle(.textOnBrandSecondary)
                 }
             } else {
-                Image(systemName: systemImage)
+                Image(icon)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .padding(AppSpacing.small)
@@ -99,22 +99,22 @@ struct ProfileDetails: View {
 #Preview {
     VStack(spacing: 16) {
         ProfileDetails(
-            systemImage: "person.fill",
+            icon: "ic_profile",
             title: "Username",
             value: "Alex",
             imageUrl: nil,
             onClick: {}
         )
-        
+
         ProfileDetails(
-            systemImage: "envelope.fill",
+            icon: "ic_email",
             title: "Email",
             value: "alex@example.com",
-            imageUrl: nil,
+            imageUrl: nil
         )
-        
+
         ProfileDetails(
-            systemImage: "lock.shield.fill",
+            icon: "ic_asterisk",
             title: "Family ID",
             value: "family-123",
             enabled: false,

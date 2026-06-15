@@ -29,7 +29,7 @@ struct ProfileView: View {
                                     ProgressView()
                                 }
                             } else {
-                                Image(systemName: "person.crop.circle")
+                                Image("ic_profile")
                                     .resizable()
                                     .aspectRatio(contentMode: .fit)
                                     .foregroundStyle(.textPrimary)
@@ -58,7 +58,7 @@ struct ProfileView: View {
                             .foregroundStyle(.brandSecondary)
                         
                         ProfileDetails(
-                            systemImage: "person.fill",
+                            icon: "ic_profile",
                             title: "Name",
                             value: user.name,
                             onClick: {
@@ -66,28 +66,28 @@ struct ProfileView: View {
                         )
 
                         ProfileDetails(
-                            systemImage: "envelope.fill",
+                            icon: "ic_email",
                             title: "Email",
                             value: user.email
                         )
 
                         if let birthday = user.birthday {
                             ProfileDetails(
-                                systemImage: "calendar",
+                                icon: "ic_cake",
                                 title: "Birthday",
                                 value: birthday.fullMonthDateString()
                             )
                         }
 
                         ProfileDetails(
-                            systemImage: "lock.fill",
+                            icon: "ic_asterisk",
                             title: "Password",
                             value: "Change password",
                             enabled: false
                         )
-                    
+
                         ProfileDetails(
-                            systemImage: "rectangle.portrait.and.arrow.right",
+                            icon: "ic_logout",
                             title: "Logout",
                             value: "",
                             onClick: {

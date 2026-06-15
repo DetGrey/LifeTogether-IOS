@@ -62,8 +62,10 @@ struct AddGroceryItemBar: View {
                     HStack(spacing: AppSpacing.small) {
                         Text("Add")
                             .font(.appBodyMedium)
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: AppSizing.iconSmall, weight: .semibold))
+                        Image("ic_expand")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: AppSizing.iconSmall, height: AppSizing.iconSmall)
                     }
                     .font(.appBodyMedium)
                     .foregroundStyle(viewModel.canAddItem ? .brandSecondary : .textSecondary)

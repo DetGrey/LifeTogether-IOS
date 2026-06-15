@@ -14,11 +14,12 @@ struct AddButton: View {
         Button(action: {
             onClick()
         }) {
-            Image(systemName: "plus")
-                .font(.appHeadlineMedium)
-                .bold()
-                .frame(width: 60, height: 60)
+            Image("ic_plus")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 28, height: 28)
                 .foregroundStyle(.textOnBrandTertiary)
+                .frame(width: 60, height: 60)
                 .background(.brandTertiary, in: Circle())
         }
     }

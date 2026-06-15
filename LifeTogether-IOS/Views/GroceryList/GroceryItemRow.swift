@@ -16,9 +16,19 @@ struct GroceryItemRow: View {
     var body: some View {
         HStack(spacing: AppSpacing.medium - AppSpacing.xSmall) {
             Button(action: onToggleCompleted) {
-                Image(systemName: item.completed ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: AppSizing.iconLarge))
-                    .foregroundStyle(.brandPrimary)
+                Group {
+                    if item.completed {
+                        Image("ic_checkmark")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                    } else {
+                        Image(systemName: "circle")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                    }
+                }
+                .frame(width: AppSizing.iconLarge, height: AppSizing.iconLarge)
+                .foregroundStyle(.brandPrimary)
             }
             .buttonStyle(.plain)
 

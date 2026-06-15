@@ -101,16 +101,18 @@ private struct GrocerySectionHeader: View {
 
                     if showsDelete, let onDelete {
                         Button(action: onDelete) {
-                            Image(systemName: "trash")
-                                .font(.system(size: AppSizing.iconMedium))
+                            Image("ic_delete")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
                                 .frame(width: AppSizing.iconMedium, height: AppSizing.iconMedium)
                                 .foregroundStyle(.statusError)
                         }
                         .buttonStyle(.plain)
                     }
 
-                    Image(systemName: isExpanded ? "chevron.right" : "chevron.down")
-                        .font(.system(size: AppSizing.iconMedium))
+                    Image(isExpanded ? "ic_expanded" : "ic_expand")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
                         .frame(width: AppSizing.iconMedium, height: AppSizing.iconMedium)
                         .foregroundStyle(.brandTertiary)
                 }

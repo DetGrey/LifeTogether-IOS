@@ -14,6 +14,11 @@ protocol UserRepository {
         uid: String,
         onChange: @escaping (Result<UserInformation, Error>) -> Void
     ) -> ListenerRegistration
+
+    @discardableResult
+    func observeAdminUids(
+        onChange: @escaping (Result<[String], Error>) -> Void
+    ) -> ListenerRegistration
 }
 
 final class FirestoreUserRepository: UserRepository {
@@ -50,6 +55,28 @@ final class FirestoreUserRepository: UserRepository {
             }
     }
 
+    func observeAdminUids(
+        onChange: @escaping (Result<[String], Error>) -> Void
+    ) -> ListenerRegistration {
+        let db = configuredDb ?? Firestore.firestore()
+
+        return db.collection("app_config")
+            .document("admins")
+            .addSnapshotListener { snapshot, error in
+                if let error {
+                    onChange(.failure(error))
+                    return
+                }
+
+                guard let snapshot, snapshot.exists else {
+                    onChange(.failure(UserRepositoryError.adminsNotFound))
+                    return
+                }
+
+                onChange(.success(Self.mapAdminUids(snapshot.get("adminUids"))))
+            }
+    }
+
     private static func mapUserInformation(documentId: String, data: [String: Any]) throws -> UserInformation {
         let uid = (data["uid"] as? String)?.nonEmpty ?? documentId.nonEmpty
 
@@ -75,16 +102,29 @@ final class FirestoreUserRepository: UserRepository {
             imageUrl: (data["imageUrl"] as? String)?.nonEmpty
         )
     }
+
+    private static func mapAdminUids(_ value: Any?) -> [String] {
+        guard let values = value as? [String] else { return [] }
+
+        var seenUids = Set<String>()
+        return values.compactMap { value in
+            guard let uid = value.nonEmpty, seenUids.insert(uid).inserted else { return nil }
+            return uid
+        }
+    }
 }
 
 enum UserRepositoryError: LocalizedError {
     case userNotFound
+    case adminsNotFound
     case missingRequiredField(String)
 
     var errorDescription: String? {
         switch self {
         case .userNotFound:
             return "User profile could not be loaded."
+        case .adminsNotFound:
+            return "Admin configuration could not be loaded."
         case .missingRequiredField(let field):
             return "User profile is missing \(field)."
         }

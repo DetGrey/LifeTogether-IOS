@@ -14,6 +14,7 @@ import Observation
 final class HomeViewModel {
     var familyInformation: FamilyInformation?
     var statusMessage: String?
+    var showsAdminSection = false
 
     @ObservationIgnored private let familyRepository: FamilyRepository
     @ObservationIgnored private var familyListener: ListenerRegistration?
@@ -31,12 +32,15 @@ final class HomeViewModel {
         switch sessionState {
         case .loading:
             statusMessage = nil
+            showsAdminSection = false
             observeFamily(familyId: nil)
         case .unauthenticated:
             statusMessage = "Please login to use the app"
+            showsAdminSection = false
             observeFamily(familyId: nil)
-        case .authenticated(let user):
+        case .authenticated(let user, let isAdmin):
             statusMessage = user.familyId == nil ? "Please create or join a family to save your data" : nil
+            showsAdminSection = isAdmin
             observeFamily(familyId: user.familyId)
         }
     }
