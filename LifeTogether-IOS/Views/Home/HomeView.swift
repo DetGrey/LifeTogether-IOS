@@ -147,7 +147,9 @@ struct HomeView: View {
                             navigationPath.removeAll()
                         }
                     case .adminGrocerySuggestions:
-                        Text("Admin Grocery Suggestions Screen Placeholder")
+                        AdminGrocerySuggestionsView {
+                            navigationPath.removeAll()
+                        }
                     }
                 }
             }

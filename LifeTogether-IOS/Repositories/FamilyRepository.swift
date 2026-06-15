@@ -48,23 +48,33 @@ final class FirestoreFamilyRepository: FamilyRepository {
                     return
                 }
 
-                onChange(
-                    .success(
-                        FamilyInformation(
-                            familyId: snapshot.documentID,
-                            members: Self.mapFamilyMembers(data["members"]),
-                            lastUpdated: (data["lastUpdated"] as? Timestamp)?.dateValue() ?? Date(timeIntervalSince1970: 0),
-                            imageUrl: (data["imageUrl"] as? String)?.nonEmpty,
-                            togetherSince: (data["togetherSince"] as? Timestamp)?.dateValue()
-                        )
-                    )
-                )
+                do {
+                    onChange(.success(try Self.mapFamilyInformation(documentId: snapshot.documentID, data: data)))
+                } catch {
+                    onChange(.failure(error))
+                }
             }
     }
 
-    private static func mapFamilyMembers(_ value: Any?) -> [FamilyMember] {
-        guard let membersData = value as? [[String: Any]] else { return [] }
+    private static func mapFamilyInformation(documentId: String, data: [String: Any]) throws -> FamilyInformation {
+        guard let lastUpdated = firestoreDate(data["lastUpdated"]) else {
+            throw FamilyRepositoryError.missingRequiredField("lastUpdated")
+        }
 
+        guard let membersData = data["members"] as? [[String: Any]] else {
+            throw FamilyRepositoryError.missingRequiredField("members")
+        }
+
+        return FamilyInformation(
+            familyId: documentId,
+            members: mapFamilyMembers(membersData),
+            lastUpdated: lastUpdated,
+            imageUrl: (data["imageUrl"] as? String)?.nonEmpty,
+            togetherSince: firestoreDate(data["togetherSince"])
+        )
+    }
+
+    private static func mapFamilyMembers(_ membersData: [[String: Any]]) -> [FamilyMember] {
         return membersData.compactMap { member in
             guard
                 let uid = (member["uid"] as? String)?.nonEmpty,
@@ -85,6 +95,7 @@ final class FirestoreFamilyRepository: FamilyRepository {
 enum FamilyRepositoryError: LocalizedError {
     case firebaseNotConfigured
     case familyNotFound
+    case missingRequiredField(String)
 
     var errorDescription: String? {
         switch self {
@@ -92,6 +103,8 @@ enum FamilyRepositoryError: LocalizedError {
             return "Firebase is not configured."
         case .familyNotFound:
             return "Family could not be loaded."
+        case .missingRequiredField(let field):
+            return "Family information is missing \(field)."
         }
     }
 }

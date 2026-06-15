@@ -12,6 +12,13 @@ extension Float {
         let format = precise ? "%.2f" : "%.0f"
         return "~" + String(format: format, locale: Locale(identifier: "en_US"), self) + "kr."
     }
+
+    var groceryPriceInputString: String {
+        let value = Double(self)
+        return value.truncatingRemainder(dividingBy: 1) == 0
+            ? String(Int(value))
+            : String(value)
+    }
 }
 
 extension Date {

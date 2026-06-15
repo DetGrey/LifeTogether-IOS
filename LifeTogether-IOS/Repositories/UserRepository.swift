@@ -50,6 +50,10 @@ final class FirestoreUserRepository: UserRepository {
                 do {
                     onChange(.success(try Self.mapUserInformation(documentId: snapshot.documentID, data: data)))
                 } catch {
+                    if snapshot.metadata.isFromCache {
+                        return
+                    }
+
                     onChange(.failure(error))
                 }
             }
@@ -73,7 +77,11 @@ final class FirestoreUserRepository: UserRepository {
                     return
                 }
 
-                onChange(.success(Self.mapAdminUids(snapshot.get("adminUids"))))
+                do {
+                    onChange(.success(try Self.mapAdminUids(snapshot.get("adminUids"))))
+                } catch {
+                    onChange(.failure(error))
+                }
             }
     }
 
@@ -92,19 +100,29 @@ final class FirestoreUserRepository: UserRepository {
             throw UserRepositoryError.missingRequiredField("name")
         }
 
+        let lastUpdatedValue = data["lastUpdated"]
+        guard let lastUpdated = firestoreDate(lastUpdatedValue) else {
+            throw UserRepositoryError.invalidDateField(
+                "lastUpdated",
+                actualType: firestoreValueTypeDescription(lastUpdatedValue)
+            )
+        }
+
         return UserInformation(
             uid: uid,
             email: email,
             name: name,
-            lastUpdated: (data["lastUpdated"] as? Timestamp)?.dateValue() ?? Date(timeIntervalSince1970: 0),
-            birthday: (data["birthday"] as? Timestamp)?.dateValue(),
+            lastUpdated: lastUpdated,
+            birthday: firestoreDate(data["birthday"]),
             familyId: (data["familyId"] as? String)?.nonEmpty,
             imageUrl: (data["imageUrl"] as? String)?.nonEmpty
         )
     }
 
-    private static func mapAdminUids(_ value: Any?) -> [String] {
-        guard let values = value as? [String] else { return [] }
+    private static func mapAdminUids(_ value: Any?) throws -> [String] {
+        guard let values = value as? [String] else {
+            throw UserRepositoryError.missingRequiredField("adminUids")
+        }
 
         var seenUids = Set<String>()
         return values.compactMap { value in
@@ -118,6 +136,7 @@ enum UserRepositoryError: LocalizedError {
     case userNotFound
     case adminsNotFound
     case missingRequiredField(String)
+    case invalidDateField(String, actualType: String)
 
     var errorDescription: String? {
         switch self {
@@ -127,6 +146,8 @@ enum UserRepositoryError: LocalizedError {
             return "Admin configuration could not be loaded."
         case .missingRequiredField(let field):
             return "User profile is missing \(field)."
+        case .invalidDateField(let field, let actualType):
+            return "User profile field \(field) is not a valid date. Received \(actualType)."
         }
     }
 }
