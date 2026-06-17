@@ -7,7 +7,8 @@
 import Foundation
 
 struct GroceryItem: Identifiable, Equatable {
-    let id: UUID
+    let id: String
+    let familyId: String
     var itemName: String
     var category: GroceryCategory
     var completed: Bool
@@ -15,7 +16,8 @@ struct GroceryItem: Identifiable, Equatable {
     var lastUpdated: Date
 
     init(
-        id: UUID = UUID(),
+        id: String = UUID().uuidString,
+        familyId: String,
         itemName: String,
         category: GroceryCategory,
         completed: Bool = false,
@@ -23,6 +25,7 @@ struct GroceryItem: Identifiable, Equatable {
         lastUpdated: Date = Date()
     ) {
         self.id = id
+        self.familyId = familyId
         self.itemName = itemName
         self.category = category
         self.completed = completed

@@ -55,6 +55,7 @@ struct GroceryItemRow: View {
     VStack(spacing: 0) {
         GroceryItemRow(
             item: GroceryItem(
+                familyId: "preview",
                 itemName: "Bananas",
                 category: GroceryCategory(emoji: "🍎", name: "Fruits"),
                 approxPrice: 12
@@ -65,6 +66,7 @@ struct GroceryItemRow: View {
 
         GroceryItemRow(
             item: GroceryItem(
+                familyId: "preview",
                 itemName: "Potatoes",
                 category: GroceryCategory(emoji: "🥦", name: "Vegetables"),
                 completed: true

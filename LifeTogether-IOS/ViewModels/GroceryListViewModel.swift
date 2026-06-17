@@ -12,46 +12,38 @@ import Observation
 @MainActor
 @Observable
 final class GroceryListViewModel {
-    var items: [GroceryItem]
+    private(set) var items: [GroceryItem] = []
+    private(set) var groceryCategories: [GroceryCategory] = []
+    private(set) var allSuggestions: [GrocerySuggestion] = []
+    private(set) var isLoading = true
+
     var newItemName = ""
     var newItemPrice = ""
     var selectedCategory: GroceryCategory = .uncategorized
-    var expandedCategories: Set<String>
+    var expandedCategories: Set<String> = []
     var isCompletedSectionExpanded = false
-
-    private(set) var allSuggestions: [GrocerySuggestion] = []
-
-    let groceryCategories: [GroceryCategory] = [
-        .uncategorized,
-        GroceryCategory(emoji: "🥦", name: "Vegetables"),
-        GroceryCategory(emoji: "🍎", name: "Fruits"),
-        GroceryCategory(emoji: "🥛", name: "Dairy"),
-        GroceryCategory(emoji: "🍞", name: "Bread"),
-        GroceryCategory(emoji: "🧼", name: "Household")
-    ]
+    var errorMessage: String?
 
     @ObservationIgnored private let groceryRepository: GroceryRepository
+    @ObservationIgnored private var itemsListener: ListenerRegistration?
+    @ObservationIgnored private var categoriesListener: ListenerRegistration?
     @ObservationIgnored private var suggestionsListener: ListenerRegistration?
+    @ObservationIgnored private var currentFamilyId: String?
 
     init(groceryRepository: GroceryRepository? = nil, initialSuggestions: [GrocerySuggestion] = []) {
         self.groceryRepository = groceryRepository ?? FirestoreGroceryRepository()
         self.allSuggestions = initialSuggestions
-
-        self.items = [
-            GroceryItem(itemName: "Bananas", category: GroceryCategory(emoji: "🍎", name: "Fruits"), approxPrice: 12),
-            GroceryItem(itemName: "Milk", category: GroceryCategory(emoji: "🥛", name: "Dairy"), approxPrice: 15),
-            GroceryItem(itemName: "Dish soap", category: GroceryCategory(emoji: "🧼", name: "Household")),
-            GroceryItem(itemName: "Potatoes", category: GroceryCategory(emoji: "🥦", name: "Vegetables"), completed: true)
-        ]
-
-        self.expandedCategories = Set(groceryCategories.map(\.name))
-
+        observeCategories()
         observeSuggestions()
     }
 
     deinit {
+        itemsListener?.remove()
+        categoriesListener?.remove()
         suggestionsListener?.remove()
     }
+
+    // MARK: - Computed
 
     var currentSuggestions: [GrocerySuggestion] {
         searchGrocerySuggestions(query: newItemName, suggestions: allSuggestions)
@@ -70,7 +62,7 @@ final class GroceryListViewModel {
     var activeItemsByCategory: [(category: GroceryCategory, items: [GroceryItem])] {
         let grouped = Dictionary(grouping: items.filter { !$0.completed }) { $0.category.name }
         return grouped
-            .compactMap { name, groupItems -> (category: GroceryCategory, items: [GroceryItem])? in
+            .compactMap { _, groupItems -> (category: GroceryCategory, items: [GroceryItem])? in
                 guard let category = groupItems.first?.category else { return nil }
                 let sorted = groupItems.sorted {
                     $0.itemName.localizedCaseInsensitiveCompare($1.itemName) == .orderedAscending
@@ -88,21 +80,59 @@ final class GroceryListViewModel {
         return prices.isEmpty ? nil : prices.reduce(0, +)
     }
 
+    // MARK: - Session
+
+    func updateFamilyId(_ familyId: String?) {
+        guard familyId != currentFamilyId else { return }
+        currentFamilyId = familyId
+        itemsListener?.remove()
+        itemsListener = nil
+
+        guard let familyId else {
+            items = []
+            isLoading = false
+            return
+        }
+
+        isLoading = true
+        itemsListener = groceryRepository.observeGroceryItems(familyId: familyId) { [weak self] result in
+            Task { @MainActor in
+                guard let self else { return }
+                self.isLoading = false
+                switch result {
+                case .success(let items):
+                    self.items = items
+                    items.forEach { self.expandedCategories.insert($0.category.name) }
+                case .failure(let error):
+                    self.errorMessage = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    // MARK: - Actions
+
     func addItem() {
-        guard canAddItem else { return }
+        guard canAddItem, let familyId = currentFamilyId else { return }
 
         let item = GroceryItem(
+            familyId: familyId,
             itemName: newItemName.trimmingCharacters(in: .whitespacesAndNewlines),
             category: selectedCategory,
             approxPrice: Float(newItemPrice)
         )
 
-        items.append(item)
-        expandedCategories.insert(selectedCategory.name)
-
         newItemName = ""
         newItemPrice = ""
         selectedCategory = .uncategorized
+
+        Task {
+            do {
+                try await groceryRepository.saveGroceryItem(item)
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+        }
     }
 
     func applySuggestion(_ suggestion: GrocerySuggestion) {
@@ -113,10 +143,17 @@ final class GroceryListViewModel {
     }
 
     func toggleCompleted(_ item: GroceryItem) {
-        guard let index = items.firstIndex(where: { $0.id == item.id }) else { return }
+        var updated = item
+        updated.completed.toggle()
+        updated.lastUpdated = Date()
 
-        items[index].completed.toggle()
-        items[index].lastUpdated = Date()
+        Task {
+            do {
+                try await groceryRepository.toggleGroceryItemCompleted(updated)
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+        }
     }
 
     func toggleCategory(_ category: GroceryCategory) {
@@ -132,7 +169,35 @@ final class GroceryListViewModel {
     }
 
     func deleteCompletedItems() {
-        items.removeAll { $0.completed }
+        let ids = completedItems.map(\.id)
+        guard !ids.isEmpty else { return }
+
+        Task {
+            do {
+                try await groceryRepository.deleteGroceryItems(ids: ids)
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    // MARK: - Private
+
+    private func observeCategories() {
+        categoriesListener = groceryRepository.observeCategories { [weak self] result in
+            Task { @MainActor in
+                guard let self else { return }
+                switch result {
+                case .success(let categories):
+                    let remote = categories
+                        .filter { $0.name != GroceryCategory.uncategorized.name }
+                        .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+                    self.groceryCategories = [.uncategorized] + remote
+                case .failure:
+                    self.groceryCategories = [.uncategorized]
+                }
+            }
+        }
     }
 
     private func observeSuggestions() {

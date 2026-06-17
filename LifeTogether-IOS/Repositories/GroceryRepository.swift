@@ -11,6 +11,18 @@ import Foundation
 
 protocol GroceryRepository {
     @discardableResult
+    func observeGroceryItems(
+        familyId: String,
+        onChange: @escaping (Result<[GroceryItem], Error>) -> Void
+    ) -> ListenerRegistration
+
+    func saveGroceryItem(_ item: GroceryItem) async throws
+
+    func toggleGroceryItemCompleted(_ item: GroceryItem) async throws
+
+    func deleteGroceryItems(ids: [String]) async throws
+
+    @discardableResult
     func observeCategories(
         onChange: @escaping (Result<[GroceryCategory], Error>) -> Void
     ) -> ListenerRegistration
@@ -36,6 +48,89 @@ final class FirestoreGroceryRepository: GroceryRepository {
 
     init(db: Firestore? = nil) {
         configuredDb = db
+    }
+
+    func observeGroceryItems(
+        familyId: String,
+        onChange: @escaping (Result<[GroceryItem], Error>) -> Void
+    ) -> ListenerRegistration {
+        guard FirebaseApp.app() != nil else {
+            onChange(.failure(GroceryRepositoryError.firebaseNotConfigured))
+            return NoOpListenerRegistration()
+        }
+
+        let db = configuredDb ?? Firestore.firestore()
+
+        return db.collection("grocery_list")
+            .whereField("familyId", isEqualTo: familyId)
+            .addSnapshotListener { snapshot, error in
+                if let error {
+                    onChange(.failure(error))
+                    return
+                }
+
+                guard let snapshot else {
+                    onChange(.failure(GroceryRepositoryError.itemsNotFound))
+                    return
+                }
+
+                let items = snapshot.documents.compactMap { document in
+                    Self.mapGroceryItem(documentId: document.documentID, data: document.data())
+                }
+
+                onChange(.success(items))
+            }
+    }
+
+    func saveGroceryItem(_ item: GroceryItem) async throws {
+        guard FirebaseApp.app() != nil else {
+            throw GroceryRepositoryError.firebaseNotConfigured
+        }
+
+        let db = configuredDb ?? Firestore.firestore()
+        let stamped = GroceryItem(
+            id: item.id,
+            familyId: item.familyId,
+            itemName: item.itemName,
+            category: item.category,
+            completed: item.completed,
+            approxPrice: item.approxPrice,
+            lastUpdated: Date()
+        )
+
+        try await db.collection("grocery_list")
+            .document(stamped.id)
+            .setData(Self.groceryItemData(stamped))
+    }
+
+    func toggleGroceryItemCompleted(_ item: GroceryItem) async throws {
+        guard FirebaseApp.app() != nil else {
+            throw GroceryRepositoryError.firebaseNotConfigured
+        }
+
+        let db = configuredDb ?? Firestore.firestore()
+
+        try await db.collection("grocery_list")
+            .document(item.id)
+            .updateData([
+                "completed": item.completed,
+                "lastUpdated": Timestamp(date: item.lastUpdated)
+            ])
+    }
+
+    func deleteGroceryItems(ids: [String]) async throws {
+        guard FirebaseApp.app() != nil else {
+            throw GroceryRepositoryError.firebaseNotConfigured
+        }
+
+        let db = configuredDb ?? Firestore.firestore()
+        let batch = db.batch()
+
+        ids.forEach { id in
+            batch.deleteDocument(db.collection("grocery_list").document(id))
+        }
+
+        try await batch.commit()
     }
 
     func observeCategories(
@@ -159,6 +254,43 @@ final class FirestoreGroceryRepository: GroceryRepository {
             .delete()
     }
 
+    private static func mapGroceryItem(documentId: String, data: [String: Any]) -> GroceryItem? {
+        guard
+            let familyId = (data["familyId"] as? String)?.nonEmpty,
+            let itemName = (data["itemName"] as? String)?.nonEmpty,
+            let categoryData = data["category"] as? [String: Any],
+            let category = mapCategory(data: categoryData)
+        else {
+            return nil
+        }
+
+        return GroceryItem(
+            id: documentId,
+            familyId: familyId,
+            itemName: itemName,
+            category: category,
+            completed: data["completed"] as? Bool ?? false,
+            approxPrice: (data["approxPrice"] as? NSNumber)?.floatValue,
+            lastUpdated: firestoreDate(data["lastUpdated"]) ?? legacyFallbackDate
+        )
+    }
+
+    private static func groceryItemData(_ item: GroceryItem) -> [String: Any] {
+        var data: [String: Any] = [
+            "familyId": item.familyId,
+            "itemName": item.itemName,
+            "completed": item.completed,
+            "category": categoryData(item.category),
+            "lastUpdated": Timestamp(date: item.lastUpdated)
+        ]
+
+        if let approxPrice = item.approxPrice {
+            data["approxPrice"] = approxPrice
+        }
+
+        return data
+    }
+
     private static func mapCategory(data: [String: Any]) -> GroceryCategory? {
         guard
             let emoji = (data["emoji"] as? String)?.nonEmpty,
@@ -217,6 +349,7 @@ final class FirestoreGroceryRepository: GroceryRepository {
 
 enum GroceryRepositoryError: LocalizedError {
     case firebaseNotConfigured
+    case itemsNotFound
     case categoriesNotFound
     case suggestionsNotFound
 
@@ -224,6 +357,8 @@ enum GroceryRepositoryError: LocalizedError {
         switch self {
         case .firebaseNotConfigured:
             return "Firebase is not configured."
+        case .itemsNotFound:
+            return "Grocery items could not be loaded."
         case .categoriesNotFound:
             return "Grocery categories could not be loaded."
         case .suggestionsNotFound:

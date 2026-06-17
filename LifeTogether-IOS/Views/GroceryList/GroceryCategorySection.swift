@@ -81,8 +81,8 @@ struct CompletedGrocerySection: View {
 #Preview("Category section") {
     let category = GroceryCategory(emoji: "🍎", name: "Fruits")
     let items = [
-        GroceryItem(itemName: "Bananas", category: category, approxPrice: 12),
-        GroceryItem(itemName: "Apples", category: category, approxPrice: 18)
+        GroceryItem(familyId: "preview", itemName: "Bananas", category: category, approxPrice: 12),
+        GroceryItem(familyId: "preview", itemName: "Apples", category: category, approxPrice: 18)
     ]
 
     GroceryCategorySection(
@@ -113,11 +113,13 @@ struct CompletedGrocerySection: View {
     CompletedGrocerySection(
         items: [
             GroceryItem(
+                familyId: "preview",
                 itemName: "Potatoes",
                 category: GroceryCategory(emoji: "🥦", name: "Vegetables"),
                 completed: true
             ),
             GroceryItem(
+                familyId: "preview",
                 itemName: "Dish soap",
                 category: GroceryCategory(emoji: "🧼", name: "Household"),
                 completed: true
