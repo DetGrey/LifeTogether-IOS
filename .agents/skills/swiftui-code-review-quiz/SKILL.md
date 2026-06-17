@@ -61,9 +61,23 @@ Use local project rules first, then explain broader SwiftUI/iOS reasoning. When 
 
 Ask one question at a time. NEVER two questions or more at the same time.
 
-Use multiple choice. Most questions should have one best answer, but include some context-judgment questions where multiple answers may be defensible and the task is to choose the best answer for this project.
+Use multiple choice. Most questions should have one best answer, but include many realistic context-judgment questions where multiple answers are defensible and the task is to choose the best review judgment for this project. Optimize for realistic ambiguity and code-review judgment, not gentle recognition. The user may get questions wrong; that is useful when the feedback teaches the underlying review principle.
 
-Prefer scenario-based review questions over isolated theory. Tag or mention the topic when useful:
+Prefer scenario-based review questions over isolated theory. Do not only quiz existing production code as-is; a professional production project will often contain mostly acceptable code, which can make the right answer predictably "reasonable compromise." Mix in realistic proposed diffs, alternative implementations, and slightly flawed variants derived from the inspected code. It is often better to compare two plausible snippets, propose an anonymized/fake-but-realistic variant, or ask which implementation is stronger without revealing which snippet is current production code. Avoid obviously bad proposed changes to otherwise good code; the challenge should be architectural judgment, not rejecting a strawman. Some questions should have "request a change" or "reject the proposed change" as the best answer, while staying plausible and repo-aware.
+
+Default to hiding snippet origin. Do not say whether a snippet is current production code, proposed code, or a fake variant unless that context is essential to the judgment. Revealing that code is already shipped biases the user toward "acceptable compromise"; revealing that code is proposed can bias the user toward rejection. When origin matters, explain why in the prompt.
+
+Use short review-stance options rather than explanation-heavy answer paragraphs. The options should usually look like review decisions or review comments, and the user should supply the reasoning. For example, prefer options such as "Approve as-is", "Request a concurrency audit before accepting", "Move this state ownership to the ViewModel", or "Keep the behavior but add observability" over long paragraphs that explain the answer. Sometimes phrase options as possible code-review comments the user would leave.
+
+Multiple-choice options must be realistic and non-giveaway. Avoid making one obviously polished answer and three cartoonishly wrong answers. Distractors should reflect plausible misunderstandings, tradeoffs, or adjacent patterns a real reviewer might consider. Do not use trivially impossible options such as "this cannot compile" or "production code cannot work" unless the question is explicitly about syntax/compiler behavior. The user should need SwiftUI/iOS/project judgment, not wording detection, to answer confidently. Vary the correct answer position across a round; do not repeatedly make the same option correct. Before asking each question after the first, check the previous correct answer letters in the active round. Never make the same option correct more than two questions in a row, and actively rebalance if one letter is becoming overrepresented. This check is required even when the content of the question is strong; answer-position bias lets the user infer the answer from quiz mechanics instead of code-review judgment. Before asking, sanity-check that at least two non-correct options are tempting enough that a thoughtful learner might consider them, and that the correct option is not simply the longest or most polished option.
+
+Avoid immediate topic repetition. Do not ask several questions in a row that rely on the same recently explained concept, such as `Sendable`, `.task(id:)`, `DataSource` naming, or "reasonable migration compromise", unless the new question substantially disguises the concept through a different surface area, module, failure mode, or tradeoff. Repetition should test transfer, not memory of the previous answer.
+
+Do not use "inspect more code" as a multiple-choice answer. If more context is required for a fair judgment, either inspect it yourself before asking or explicitly include the needed snippet/context in the question. If the exercise is about investigation, ask the user to inspect a specific file/snippet as part of the prompt, then choose among actual review judgments.
+
+Be scope-aware. If the user focuses the quiz on a module, package, feature, file, or directory, primarily ask about that scope. Occasionally compare with neighboring modules when it helps test transfer or project conventions. If the quiz is project-wide or topic-wide, freely sample across the project. Keep this guidance generic and reusable; do not hardcode any specific repository, feature, or module into the skill.
+
+Tag or mention the topic when useful:
 
 - package/module structure
 - dependency boundaries
@@ -86,10 +100,10 @@ Use a mix of question types:
 - classify code as good, bad, acceptable compromise, legacy constraint, or project convention
 - infer why code may have been written this way
 - choose the least risky incremental improvement
+- choose the best review comment to leave
+- compare two plausible snippets without revealing which one is current code
 
 Include intentionally flawed snippets, but avoid cartoonishly bad examples except at beginner level. Intermediate and advanced questions should use realistic code that could plausibly pass review unless the reviewer understands the architecture and conventions.
-
-Multiple-choice options must be realistic and non-giveaway. Avoid making one obviously polished answer and three cartoonishly wrong answers. Distractors should reflect plausible misunderstandings, tradeoffs, or adjacent patterns a real reviewer might consider. Do not use trivially impossible options such as "this cannot compile" or "production code cannot work" unless the question is explicitly about syntax/compiler behavior. The user should need SwiftUI/iOS/project judgment, not wording detection, to answer confidently. Vary the correct answer position across a round; do not repeatedly make option A correct. Before asking, quickly sanity-check that at least two non-correct options are tempting enough that a thoughtful learner might consider them, and that the correct option is not simply the longest or most polished paragraph.
 
 ## Answer Format
 
@@ -121,6 +135,8 @@ After every answer, respond with:
 8. A follow-up question only when the answer reveals a useful gap or ambiguity.
 
 If the user asks a clarification, follow-up, or meta-process question while answering, handle that question before moving on. Then give feedback on the submitted answer. Do not ask the next quiz question in the same response unless the user clearly wants to continue immediately; otherwise pause and let the user decide when to proceed. When pausing after feedback, end with an explicit cue such as "Ask any follow-up, or say continue for the next question." so it is clear the round is still active.
+
+Use confidence actively in feedback. If the user is highly confident and wrong, focus on the misconception that made the answer feel obvious. If the user is low-confidence and right, explain why their instinct was sound and give a reusable mental model. If the user is high-confidence and right but the reasoning is thin, probe whether they inferred from option wording rather than understanding. If the user is low-confidence and wrong, explain the missing concept directly without softening the judgment into vagueness.
 
 When citing project docs, explain the reasoning first and cite the exact local file or rule only after the explanation. Do not turn every answer into documentation lookup; cite when the answer depends on local conventions.
 

@@ -4,14 +4,40 @@ This file stores durable learning conclusions for future quiz sessions. Keep it 
 
 ## Current Snapshot
 
-- Estimated level: Advanced beginner moving toward intermediate for SwiftUI architecture/code review in this repo
-- Strongest areas: Reasoning about production tradeoffs, coordinator-owned navigation state, when small refactors are worth doing, async lifecycle/task ownership tradeoffs, layout risk assessment when given enough context
-- Weakest areas: Distinguishing acceptable UIKit/SwiftUI migration interop from architectural smell; recognizing legacy/global event bridges such as NotificationCenter as the primary concern; Swift/iOS naming conventions like DataSource as UI adapter; building intuition for UI models that own async observation tasks
-- Recurring misconceptions: Tends to map Android/Compose architecture expectations directly onto SwiftUI; may assume SwiftUI/UIKit mixing is inherently bad; can be influenced by overly obvious multiple-choice wording
-- Confidence calibration: Often thoughtful and well calibrated, but confidence can be inflated when distractors are unrealistic; explicitly notices when question context is insufficient
-- Recommended next focus: Continue with Recipes using realistic tradeoff scenarios around KMP service boundaries, error/loading states, analytics ownership, and async task lifecycle
+- Estimated level: Intermediate for SwiftUI/iOS code review judgment; strong production-review instincts, still building Swift-specific concurrency and iOS naming/interop intuition
+- Strongest areas: PR scope control, production tradeoffs, coordinator-owned navigation state, error/empty-state distinctions, UI/service analytics ownership, package-boundary judgment, formatting/localization extraction judgment when context is clear
+- Weakest areas: Swift concurrency concepts such as Sendable, actor boundaries, @unchecked Sendable, and unsynchronized async stream state; distinguishing acceptable UIKit/SwiftUI migration interop from architectural smell; Swift/iOS naming conventions like DataSource as UI adapter; building intuition for UI models that own async observation tasks
+- Recurring misconceptions: Tends to map Android/Compose architecture expectations directly onto SwiftUI; may assume SwiftUI/UIKit mixing is inherently bad; can under-prioritize synchronization concerns in mocks if tests appear main-actor-bound; can be influenced by multiple-choice answer-position or wording patterns
+- Confidence calibration: Often thoughtful and well calibrated; lower confidence is usually a useful signal around unfamiliar Swift/iOS mechanics; explicitly notices unfair hidden context, weak distractors, repeated concepts, and answer-position bias
+- Recommended next focus: Actor isolation/Sendable, service boundaries, error/loading UX contracts, analytics ownership, and async task lifecycle
 
 ## Round History
+
+### 2026-06-17 - Recipes Package Fresh Harder Round
+
+- Scope: `MobileBuy/Packages/Features/Recipes`
+- Difficulty: Mixed/intermediate-advanced, realistic review judgment
+- Result: Approximately 3.5/5; partially correct on async stream mock synchronization and shopping-list async UX contract, correct on localization extraction, PR scope/package migration, and analytics ownership
+- Topics covered: `AsyncStream` continuation ownership in mocks, sheet ViewModel versus coordinator/service responsibility, silent fire-and-forget shopping-list side effects, ingredient amount pluralization/formatting, 3-target versus 4-target package migration scope, analytics placement across service/ViewModel/view
+- Strengths shown: Strong PR scope judgment; good instinct that ViewModels may depend on services in this project; good nuance around UI-intent analytics versus action/result analytics; accurately identifies growing hardcoded formatting rules as an extraction point; flags quiz mechanics when all correct answers share the same letter
+- Weak areas shown: Needs more practice spotting synchronization/actor-isolation concerns in test mocks and understanding when tests do not prove thread safety; still calibrating how much a readability refactor should also improve user-facing async success/failure contracts
+- Confidence notes: Low confidence was well calibrated on unfamiliar async/service-boundary questions; high confidence was justified on package-scope and analytics questions; answer-position bias affected the round because all correct answers were option B
+- Project conventions learned: Existing documented package shapes are not automatically migrated inside unrelated PRs; Recipes may keep UI formatting local until rules grow, but grammar/business-language tables should be extracted; analytics can live near the event source rather than mechanically in one layer
+- Next focus: Swift concurrency/actor isolation, async UX contracts, and service-boundary decisions
+
+
+### 2026-06-17 - Recipes Package Focus Round 3
+
+- Scope: `MobileBuy/Packages/Features/Recipes`
+- Difficulty: Mixed, adaptive intermediate
+- Result: Strong round, approximately 5/5; user answered correctly while repeatedly identifying quiz design issues that made answers too predictable
+- Topics covered: KMP page-component mapping and partial failure, unknown component resilience and observability, `RecipeError` empty/error modeling with retry closures, fire-and-forget cache synchronization on login changes, search error versus empty-result state, `Sendable` and `@unchecked Sendable` review judgment
+- Strengths shown: Strong user-facing state reasoning; clear distinction between empty state and error state; good production judgment around best-effort side effects; notices hidden context and asks for missing old/new snippet context; actively improves learning process quality
+- Weak areas shown: Needs more practice with Swift concurrency terminology and safety model (`Sendable`, actor boundaries, manual/unchecked conformance); benefits from seeing both current and proposed code when review hinges on a diff
+- Confidence notes: Answers were often correct, but confidence was partly affected by too-obvious options; user explicitly requested more fake-but-realistic snippets and A/B comparisons so confidence reflects knowledge rather than answer-shape detection
+- Project conventions learned: Dynamic KMP-driven components can degrade gracefully but need observability; UI empty state and error state must stay distinct; fire-and-forget login cache sync is acceptable only as best-effort; service protocols are expected to move toward `Sendable`, but `@unchecked Sendable` requires auditing stored dependencies
+- Next focus: Swift concurrency, dependency sendability, KMP adapter boundaries, and testability of error/retry flows
+
 
 ### 2026-06-16 - Recipes Package Focus Round 2
 
@@ -23,7 +49,7 @@ This file stores durable learning conclusions for future quiz sessions. Keep it 
 - Weak areas shown: Still building intuition for why some iOS UI models own async observation tasks; benefits from explicit explanation of lifecycle ownership and shared stream use cases
 - Confidence notes: Confidence was more grounded when distractors improved; called out repeated option-A bias and weak distractors, prompting skill improvements
 - Project conventions learned: `RecipeItem` is a UI model that tracks shared favorite ids via `AsyncStream`; long-lived observation tasks should be stored/cancelled; action-level analytics can reasonably live in `RecipesServiceLive`; `RecipesServiceMock` is more DevApp/high-level fake than ideal strict unit mock; `.task(id:)` can intentionally bind async pagination to view lifecycle
-- Next quiz guidance: Continue with realistic tradeoff questions where multiple answers are plausible; explore `KmpRecipesCore`, error states, and when UI/coordinator/service should own analytics, loading, and navigation side effects
+- Next focus: `KmpRecipesCore`, error states, and when UI/coordinator/service should own analytics, loading, and navigation side effects
 
 
 ### 2026-06-16 - Recipes Package Mixed Round
@@ -36,4 +62,4 @@ This file stores durable learning conclusions for future quiz sessions. Keep it 
 - Weak areas shown: Needs more confidence with iOS migration patterns where UIKit/SwiftUI interop is normal; needs clearer mental model for iOS `DataSource` naming as UI adapter rather than data layer; should practice identifying the highest-priority review concern when multiple options are partly true
 - Confidence notes: High confidence correct when options were too obvious; lower confidence on genuinely unfamiliar iOS conventions, which is healthy
 - Project conventions learned: `RecipesDataSource` is a UI adapter in `RecipesUI`; coordinators own navigation/presentation state; `NavigationStack(path:)` mutates route arrays to navigate; `UIHostingController` is acceptable migration interop; `NotificationCenter` observation is acceptable but legacy-flavored; existing migrated packages may not follow the newer 4-target guide exactly
-- Next quiz guidance: Make distractors realistic and non-giveaway; include all hidden code needed for fair judgment or ask what to inspect next; allow follow-up questions before continuing
+- Next focus: iOS migration patterns, `DataSource` naming, and identifying the highest-priority review concern when multiple concerns are partly true
