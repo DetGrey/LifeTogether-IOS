@@ -1,0 +1,7 @@
+interface:
+  display_name: "SwiftUI Code Review Quiz"
+  short_description: "Adaptive SwiftUI review quiz with progress memory."
+  default_prompt: "Use $swiftui-code-review-quiz to quiz me on SwiftUI code review judgment for this project."
+
+policy:
+  allow_implicit_invocation: true

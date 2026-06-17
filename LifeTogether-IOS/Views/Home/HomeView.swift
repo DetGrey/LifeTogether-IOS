@@ -109,49 +109,13 @@ struct HomeView: View {
                     Button {
                         navigationPath.append(sessionStore.isLoggedIn ? .profile : .login)
                     } label: {
-                        Image("ic_profile")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: AppSizing.iconMedium, height: AppSizing.iconMedium)
-                            .foregroundStyle(.textPrimary)
+                        ToolbarIcon(icon: "ic_profile")
                     }
                     .accessibilityLabel(sessionStore.isLoggedIn ? "Profile" : "Login")
                 }
             }
             .navigationDestination(for: HomeDestination.self) { destination in
-                switch destination {
-                case .login:
-                    LoginView()
-                case .profile:
-                    ProfileView()
-                case .tile(let tile):
-                    switch tile {
-                    case .groceryList:
-                        GroceryListView()
-                    case .recipes:
-                        Text("Recipes Screen Placeholder")
-                    case .guides:
-                        Text("Guides Screen Placeholder")
-                    case .gallery:
-                        Text("Gallery Screen Placeholder")
-                    case .tipTracker:
-                        Text("Tip Tracker Screen Placeholder")
-                    case .userLists:
-                        Text("Lists Screen Placeholder")
-                    case .mealPlanner:
-                        Text("Meal Planner Screen Placeholder")
-                    case .traveller:
-                        Text("Traveller Screen Placeholder")
-                    case .adminGroceryCategories:
-                        AdminGroceryCategoriesView {
-                            navigationPath.removeAll()
-                        }
-                    case .adminGrocerySuggestions:
-                        AdminGrocerySuggestionsView {
-                            navigationPath.removeAll()
-                        }
-                    }
-                }
+                destinationView(for: destination)
             }
             .onChange(of: sessionStore.isLoggedIn) { _, isLoggedIn in
                 if !isLoggedIn {
@@ -168,6 +132,48 @@ struct HomeView: View {
             }
             .onChange(of: sessionStore.state) { _, state in
                 viewModel.update(for: state)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func destinationView(for destination: HomeDestination) -> some View {
+        switch destination {
+        case .login:
+            LoginView()
+        case .profile:
+            ProfileView()
+        case .tile(let tile):
+            tileView(for: tile)
+        }
+    }
+
+    @ViewBuilder
+    private func tileView(for tile: HomeTile) -> some View {
+        switch tile {
+        case .groceryList:
+            GroceryListView()
+        case .recipes:
+            Text("Recipes Screen Placeholder")
+        case .guides:
+            Text("Guides Screen Placeholder")
+        case .gallery:
+            Text("Gallery Screen Placeholder")
+        case .tipTracker:
+            Text("Tip Tracker Screen Placeholder")
+        case .userLists:
+            Text("Lists Screen Placeholder")
+        case .mealPlanner:
+            Text("Meal Planner Screen Placeholder")
+        case .traveller:
+            Text("Traveller Screen Placeholder")
+        case .adminGroceryCategories:
+            AdminGroceryCategoriesView {
+                navigationPath.removeAll()
+            }
+        case .adminGrocerySuggestions:
+            AdminGrocerySuggestionsView {
+                navigationPath.removeAll()
             }
         }
     }

@@ -8,8 +8,11 @@
 
 import SwiftUI
 
+private enum FocusedField { case name, price }
+
 struct AddGroceryItemBar: View {
     @Bindable var viewModel: GroceryListViewModel
+    @FocusState private var focusedField: FocusedField?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -22,6 +25,7 @@ struct AddGroceryItemBar: View {
                 .font(.appBodyMedium)
                 .foregroundStyle(.textPrimary)
                 .textInputAutocapitalization(.sentences)
+                .focused($focusedField, equals: .name)
                 .padding(AppSpacing.medium)
 
             HStack(spacing: AppSpacing.medium - AppSpacing.xSmall) {
@@ -51,6 +55,7 @@ struct AddGroceryItemBar: View {
                     .font(.appBodySmall)
                     .foregroundStyle(.textPrimary)
                     .keyboardType(.decimalPad)
+                    .focused($focusedField, equals: .price)
                     .padding(.horizontal, AppSpacing.medium - AppSpacing.xSmall)
                     .frame(height: AppSizing.touchTargetMinimum)
                     .background(.surfaceSecondary)
@@ -77,8 +82,46 @@ struct AddGroceryItemBar: View {
         }
         .background(.appBackgroundSecondary)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.medium))
+        .toolbar {
+            ToolbarItem(placement: .keyboard) {
+                suggestionToolbar
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var suggestionToolbar: some View {
+        if focusedField == .name && !viewModel.currentSuggestions.isEmpty {
+            suggestionChips(for: viewModel.currentSuggestions)
+        }
+    }
+
+    private func suggestionChips(for suggestions: [GrocerySuggestion]) -> some View {
+        ScrollView(.horizontal) {
+            HStack(spacing: AppSpacing.small) {
+                ForEach(suggestions) { suggestion in
+                    Button {
+                        viewModel.applySuggestion(suggestion)
+                    } label: {
+                        Text("\(suggestion.category.emoji) \(suggestion.suggestionName)")
+                            .font(.appBodyMedium)
+                            .foregroundStyle(.textPrimary)
+                            .padding(.horizontal, AppSpacing.medium)
+                            .padding(.vertical, AppSpacing.small)
+                            .background(.brandPrimaryContainer, in: Capsule())
+                    }
+                }
+            }
+            .padding(.horizontal, AppSpacing.medium)
+        }
+        .scrollIndicators(.hidden)
     }
 }
+
+private let previewSuggestions: [GrocerySuggestion] = [
+    GrocerySuggestion(id: "1", suggestionName: "Milk", category: GroceryCategory(emoji: "🥛", name: "Dairy"), approxPrice: 15),
+    GrocerySuggestion(id: "2", suggestionName: "Miso paste", category: GroceryCategory(emoji: "❓️", name: "Uncategorized"), approxPrice: nil),
+]
 
 #Preview("Empty") {
     AddGroceryItemBar(viewModel: GroceryListViewModel())
@@ -96,6 +139,37 @@ struct AddGroceryItemBar: View {
             return viewModel
         }()
     )
-        .padding()
-        .background(.appBackground)
+    .padding()
+    .background(.appBackground)
+}
+
+#Preview("Suggestions") {
+    let chips = searchGrocerySuggestions(query: "Mi", suggestions: previewSuggestions)
+
+    VStack(spacing: 0) {
+        AddGroceryItemBar(viewModel: {
+            let vm = GroceryListViewModel(initialSuggestions: previewSuggestions)
+            vm.newItemName = "Mi"
+            return vm
+        }())
+        .padding(.horizontal, AppSpacing.medium)
+        .padding(.top, AppSpacing.medium)
+
+        ScrollView(.horizontal) {
+            HStack(spacing: AppSpacing.small) {
+                ForEach(chips) { suggestion in
+                    Text("\(suggestion.category.emoji) \(suggestion.suggestionName)")
+                        .font(.appBodyMedium)
+                        .foregroundStyle(.textPrimary)
+                        .padding(.horizontal, AppSpacing.medium)
+                        .padding(.vertical, AppSpacing.small)
+                        .background(.brandPrimaryContainer, in: Capsule())
+                }
+            }
+            .padding(.horizontal, AppSpacing.medium)
+        }
+        .scrollIndicators(.hidden)
+        .padding(.top, AppSpacing.small)
+    }
+    .background(.appBackground)
 }

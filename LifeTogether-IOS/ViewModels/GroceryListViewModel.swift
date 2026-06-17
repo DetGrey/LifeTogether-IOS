@@ -5,9 +5,11 @@
 //  Created by Ane Novrup Larsen on 11/06/2026.
 //
 
+import FirebaseFirestore
 import Foundation
 import Observation
 
+@MainActor
 @Observable
 final class GroceryListViewModel {
     var items: [GroceryItem]
@@ -16,6 +18,8 @@ final class GroceryListViewModel {
     var selectedCategory: GroceryCategory = .uncategorized
     var expandedCategories: Set<String>
     var isCompletedSectionExpanded = false
+
+    private(set) var allSuggestions: [GrocerySuggestion] = []
 
     let groceryCategories: [GroceryCategory] = [
         .uncategorized,
@@ -26,7 +30,13 @@ final class GroceryListViewModel {
         GroceryCategory(emoji: "🧼", name: "Household")
     ]
 
-    init() {
+    @ObservationIgnored private let groceryRepository: GroceryRepository
+    @ObservationIgnored private var suggestionsListener: ListenerRegistration?
+
+    init(groceryRepository: GroceryRepository? = nil, initialSuggestions: [GrocerySuggestion] = []) {
+        self.groceryRepository = groceryRepository ?? FirestoreGroceryRepository()
+        self.allSuggestions = initialSuggestions
+
         self.items = [
             GroceryItem(itemName: "Bananas", category: GroceryCategory(emoji: "🍎", name: "Fruits"), approxPrice: 12),
             GroceryItem(itemName: "Milk", category: GroceryCategory(emoji: "🥛", name: "Dairy"), approxPrice: 15),
@@ -35,6 +45,16 @@ final class GroceryListViewModel {
         ]
 
         self.expandedCategories = Set(groceryCategories.map(\.name))
+
+        observeSuggestions()
+    }
+
+    deinit {
+        suggestionsListener?.remove()
+    }
+
+    var currentSuggestions: [GrocerySuggestion] {
+        searchGrocerySuggestions(query: newItemName, suggestions: allSuggestions)
     }
 
     var canAddItem: Bool {
@@ -48,13 +68,16 @@ final class GroceryListViewModel {
     }
 
     var activeItemsByCategory: [(category: GroceryCategory, items: [GroceryItem])] {
-        groceryCategories.compactMap { category in
-            let categoryItems = items
-                .filter { !$0.completed && $0.category.name == category.name }
-                .sorted { $0.itemName.localizedCaseInsensitiveCompare($1.itemName) == .orderedAscending }
-
-            return categoryItems.isEmpty ? nil : (category, categoryItems)
-        }
+        let grouped = Dictionary(grouping: items.filter { !$0.completed }) { $0.category.name }
+        return grouped
+            .compactMap { name, groupItems -> (category: GroceryCategory, items: [GroceryItem])? in
+                guard let category = groupItems.first?.category else { return nil }
+                let sorted = groupItems.sorted {
+                    $0.itemName.localizedCaseInsensitiveCompare($1.itemName) == .orderedAscending
+                }
+                return (category, sorted)
+            }
+            .sorted { $0.category.name.localizedCaseInsensitiveCompare($1.category.name) == .orderedAscending }
     }
 
     var expectedTotalPrice: Float? {
@@ -82,6 +105,13 @@ final class GroceryListViewModel {
         selectedCategory = .uncategorized
     }
 
+    func applySuggestion(_ suggestion: GrocerySuggestion) {
+        newItemName = suggestion.suggestionName
+        selectedCategory = suggestion.category
+        newItemPrice = suggestion.approxPrice?.groceryPriceInputString ?? ""
+        addItem()
+    }
+
     func toggleCompleted(_ item: GroceryItem) {
         guard let index = items.firstIndex(where: { $0.id == item.id }) else { return }
 
@@ -103,5 +133,21 @@ final class GroceryListViewModel {
 
     func deleteCompletedItems() {
         items.removeAll { $0.completed }
+    }
+
+    private func observeSuggestions() {
+        suggestionsListener = groceryRepository.observeGrocerySuggestions { [weak self] result in
+            Task { @MainActor in
+                guard let self else { return }
+                switch result {
+                case .success(let suggestions):
+                    self.allSuggestions = suggestions.sorted {
+                        $0.suggestionName.localizedCaseInsensitiveCompare($1.suggestionName) == .orderedAscending
+                    }
+                case .failure:
+                    self.allSuggestions = []
+                }
+            }
+        }
     }
 }
