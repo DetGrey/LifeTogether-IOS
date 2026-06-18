@@ -9,9 +9,22 @@ This file stores durable learning conclusions for future quiz sessions. Keep it 
 - Weakest areas: Swift concurrency concepts such as Sendable, actor boundaries, @unchecked Sendable, and unsynchronized async stream state; distinguishing acceptable UIKit/SwiftUI migration interop from architectural smell; Swift/iOS naming conventions like DataSource as UI adapter; building intuition for UI models that own async observation tasks
 - Recurring misconceptions: Tends to map Android/Compose architecture expectations directly onto SwiftUI; may assume SwiftUI/UIKit mixing is inherently bad; can under-prioritize synchronization concerns in mocks if tests appear main-actor-bound; can be influenced by multiple-choice answer-position or wording patterns
 - Confidence calibration: Often thoughtful and well calibrated; lower confidence is usually a useful signal around unfamiliar Swift/iOS mechanics; explicitly notices unfair hidden context, weak distractors, repeated concepts, and answer-position bias
-- Recommended next focus: Actor isolation/Sendable, service boundaries, error/loading UX contracts, analytics ownership, and async task lifecycle
+- Recommended next focus: Combine protocol boundaries (`AnyPublisher` vs concrete `Published` publishers), degraded-cache UX state modeling, and SwiftUI `.task` lifecycle intuition
 
 ## Round History
+
+
+### 2026-06-18 - Vigo iOS Project-Wide Mixed Round
+
+- Scope: `vigo-ios` project-wide, weighted intermediate/advanced across ProductList, service protocols, search UX, async task lifecycle, and testing mocks
+- Result: 4/5; correct on analytics ownership, service protocol cleanup, `.task` lifecycle, and pragmatic mock shape; missed degraded cache/error UX distinction
+- Topics covered: UI-intent analytics placement, direct singleton analytics as testability compromise, callback versus publisher/async stream service boundaries, `Published.Publisher` versus `AnyPublisher`, cached fallback versus true error state, SwiftUI `.task` cancellation semantics, mock configurability and Sendable/actor-isolation review judgment
+- Strengths shown: Strong boundary judgment around analytics ownership; good recognition that new service contracts should avoid callback-shaped APIs; increasingly healthy uncertainty around SwiftUI lifecycle and concurrency; avoids over-applying templates when a simple mock matches the protocol
+- Weak areas shown: Needs more practice modeling degraded states distinctly from normal success; still building confidence with Combine protocol surface design and `.task` recomposition/lifecycle behavior
+- Confidence notes: High confidence was well calibrated on analytics; medium/low confidence correctly identified unfamiliar areas around Combine, cache UX, `.task`, and mock actor isolation; one miss came from prioritizing user convenience over truthful state modeling
+- Project conventions learned: Action-level analytics may live near UI intent; new service protocols should be `Sendable` and expose observation as `AnyPublisher` or async streams rather than callbacks; cached fallback should be represented as degraded state, not ordinary success; screen-scoped async loops can live in SwiftUI `.task`; simple mocks are acceptable when the protocol is simple, with actor isolation added when concurrent use makes it necessary
+- Next focus: Degraded-state/error contracts, Combine boundary types, and Swift concurrency isolation for mocks/services
+
 
 ### 2026-06-17 - Recipes Package Fresh Harder Round
 
